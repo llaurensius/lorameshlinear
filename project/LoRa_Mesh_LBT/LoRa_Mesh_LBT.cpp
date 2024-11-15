@@ -13,13 +13,13 @@
 #define EEPROM_ADDRESS 0 // EEPROM address to store node ID
 #define MAX_RECEIVED_IDS 50 // Max number of received IDs to store
 
-/// Pin definitions for TTGO LoRa V1
+/*// Pin definitions for TTGO LoRa V1
 #define RFM95_CS 18    // Chip Select
 #define RFM95_RST 24   // Reset
 #define RFM95_INT 26   // DIO0
 //*/
 
-/*// Pin definitions for ESP32-MisRed
+/// Pin definitions for ESP32-MisRed
 #define RFM95_CS 15    // Chip Select
 #define RFM95_RST 26   // Reset
 #define RFM95_INT 27   // DIO0
@@ -27,7 +27,7 @@
 
 // Declare a variable for the node ID
 uint8_t nodeId;
-uint8_t setNodeId = 4; // Change this value for each node before uploading
+uint8_t setNodeId = 1; // Change this value for each node before uploading
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT); // RF95 driver with specified pins
 RHMesh* manager; // Mesh manager
