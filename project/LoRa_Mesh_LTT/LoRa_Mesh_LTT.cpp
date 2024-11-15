@@ -11,17 +11,15 @@
 
 #define N_NODES 4     // Total number of nodes: N1, N2, N3, N4
 #define EEPROM_ADDRESS 0 // EEPROM address to store node ID
-#define MAX_RECEIVED_IDS 100 // Max number of received IDs to store
-#define LTT_LISTEN_DURATION 500 // Duration to listen for potential transmissions in milliseconds
-#define LTT_BACKOFF_TIME 1000 // Backoff time before sending in milliseconds
+#define MAX_RECEIVED_IDS 100 // Maximum number of IDs to store
 
-/*// Pin definitions for TTGO LoRa V1
+/// Pin definitions for TTGO LoRa V1
 #define RFM95_CS 18    // Chip Select
 #define RFM95_RST 24   // Reset
 #define RFM95_INT 26   // DIO0
 //*/
 
-/// Pin definitions for ESP32-MisRed
+/*// Pin definitions for ESP32-MisRed
 #define RFM95_CS 15    // Chip Select
 #define RFM95_RST 26   // Reset
 #define RFM95_INT 27   // DIO0
@@ -29,10 +27,10 @@
 
 // Declare a variable for the node ID
 uint8_t nodeId;
-uint8_t setNodeId = 1; // Change this value for each node before uploading
+uint8_t setNodeId = 3; // Change this value for each node before uploading
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT); // RF95 driver with specified pins
-RHMesh* manager; // Mesh manager
+RHMesh *manager; // Mesh manager
 char buf[RH_MESH_MAX_MESSAGE_LEN]; // Buffer for messages
 
 DHT dht(DHTPIN, DHTTYPE);
@@ -43,7 +41,7 @@ uint8_t sentCounter = 0;  // Counter for sent messages
 static std::set<uint8_t> receivedIDs;
 
 // Function to send messages with retry on failure
-bool sendWithRetry(uint8_t destination, const char* message) {
+bool sendWithRetry(uint8_t destination, const char *message) {
     const int maxRetries = 5; // Max retry attempts
     int attempt = 0;
     uint8_t error;
@@ -71,21 +69,10 @@ bool sendWithRetry(uint8_t destination, const char* message) {
     return false; // All attempts failed
 }
 
-// Function to Listen To Talk
-bool listenToTalk() {
-    // Check if RF95 is available (listening for incoming messages)
-    delay(LTT_LISTEN_DURATION); // Listen before talking
-    return !rf95.available(); // Return false if the channel is busy
-}
-
-// Function to clear old IDs
-void clearOldIDs() {
-    // If the number of received IDs exceeds the maximum, erase the oldest one
+// Function to periodically remove old IDs from receivedIDs set
+void cleanOldIDs() {
     while (receivedIDs.size() > MAX_RECEIVED_IDS) {
-        // Remove the first element (oldest ID)
-        auto it = receivedIDs.begin();
-        receivedIDs.erase(it);
-        Serial.println(F("Removed oldest ID from memory."));
+        receivedIDs.erase(receivedIDs.begin()); // Remove the oldest ID
     }
 }
 
@@ -134,29 +121,26 @@ void loop() {
             return;
         }
 
-        // Prepare message with temperature and humidity data and unique count
-        sprintf(buf, "ID:%d T:%.2f C H:%.2f %%", sentCounter++, t, h);
-        Serial.print(F("Node 1: Ready to send data to N4 via N2 and N3: "));
+        // Prepare message with ID and sensor data
+        sprintf(buf, "ID:%d T:%.2f C H:%.2f %%", sentCounter, t, h);
+        Serial.print(F("Node 1: send data to N4 via N2 and N3: "));
         Serial.println(buf);
 
-        // Listen to talk before sending
-        if (listenToTalk()) {
-            delay(LTT_BACKOFF_TIME); // Introduce backoff delay before sending
-            // Send message to N2 with retry
-            if (!sendWithRetry(2, buf)) {
-                Serial.println(F("Message to N2 failed after retries"));
-            }
+        // Delay for a random time to allow others to send before attempting to send
+        delay(random(100, 1000));  // Random delay between 100ms and 1000ms
 
-            // Display RSSI and SNR after sending
-            int16_t rssi = rf95.lastRssi();
-            float snr = rf95.lastSNR();
-            Serial.print(F("Node 1 - RSSI: "));
-            Serial.print(rssi);
-            Serial.print(F(" dBm, SNR: "));
-            Serial.println(snr);
-        } else {
-            Serial.println(F("Channel is busy. Not sending."));
+        // Sending message to N2 with retry
+        if (sendWithRetry(2, buf)) {
+            sentCounter++; // Increment only after successful send
         }
+
+        // Display RSSI and SNR after sending
+        int16_t rssi = rf95.lastRssi();
+        float snr = rf95.lastSNR();
+        Serial.print(F("Node 1 - RSSI: "));
+        Serial.print(rssi);
+        Serial.print(F(" dBm, SNR: "));
+        Serial.println(snr);
     }
 
     // Listen for incoming messages
@@ -167,7 +151,7 @@ void loop() {
         
         // Extract ID from received message
         int messageId;
-        sscanf(buf, "ID:%d", &messageId); // Assuming the ID is in the format "ID:1"
+        sscanf(buf, "ID:%d", &messageId); // Assuming the ID is in the format "ID:x"
 
         // Check if the message ID is new
         if (receivedIDs.find(messageId) == receivedIDs.end()) {
@@ -178,8 +162,8 @@ void loop() {
             Serial.print(F(": "));
             Serial.println(buf);
 
-            // Clear old IDs if size limit exceeds
-            clearOldIDs();
+            // Clean old IDs
+            cleanOldIDs(); 
 
             // Get and display RSSI and SNR for the received message
             int16_t rssi = rf95.lastRssi();
@@ -193,24 +177,14 @@ void loop() {
 
             // Forward the message to the next node if necessary
             if (nodeId == 2) {
-                // Listen before forwarding to N3
-                if (listenToTalk()) {
-                    delay(LTT_BACKOFF_TIME);
-                    if (!sendWithRetry(3, buf)) {
-                        Serial.println(F("Failed to forward to N3 after retries"));
-                    }
-                } else {
-                    Serial.println(F("Channel busy, cannot forward to N3"));
+                // Forward to N3 with retry mechanism
+                if (!sendWithRetry(3, buf)) {
+                    Serial.println(F("Failed to forward to N3 after retries"));
                 }
             } else if (nodeId == 3) {
-                // Listen before forwarding to N4
-                if (listenToTalk()) {
-                    delay(LTT_BACKOFF_TIME);
-                    if (!sendWithRetry(4, buf)) {
-                        Serial.println(F("Failed to forward to N4 after retries"));
-                    }
-                } else {
-                    Serial.println(F("Channel busy, cannot forward to N4"));
+                // Forward to N4 with retry mechanism
+                if (!sendWithRetry(4, buf)) {
+                    Serial.println(F("Failed to forward to N4 after retries"));
                 }
             } 
         } else {
@@ -218,5 +192,5 @@ void loop() {
         }
     }
 
-    delay(2000); // Delay before next transmission
+    delay(2000); // Delay before the next transmission
 }
