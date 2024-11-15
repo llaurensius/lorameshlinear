@@ -12,13 +12,13 @@
 #define N_NODES 4     // Total number of nodes: N1, N2, N3, N4
 #define EEPROM_ADDRESS 0 // EEPROM address to store node ID
 
-/// Pin definitions for TTGO LoRa V1
+/*// Pin definitions for TTGO LoRa V1
 #define RFM95_CS 18    // Chip Select
 #define RFM95_RST 24   // Reset
 #define RFM95_INT 26   // DIO0
 //*/
 
-/*// Pin definitions for ESP32-MisRed
+/// Pin definitions for ESP32-MisRed
 #define RFM95_CS 15    // Chip Select
 #define RFM95_RST 26   // Reset
 #define RFM95_INT 27   // DIO0
@@ -26,6 +26,7 @@
 
 // Declare a variable for the node ID
 uint8_t nodeId;
+uint8_t setNodeId = 1; // Change this value for each node before uploading
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT); // RF95 driver with specified pins
 RHMesh *manager; // Mesh manager
@@ -77,7 +78,7 @@ void setup() {
 
     // Check if nodeId is invalid (1-4 range, corresponding to N1-N4)
     if (nodeId < 1 || nodeId > N_NODES) {
-        nodeId = 1; // Change this value for each node before uploading
+        nodeId = setNodeId; 
         EEPROM.write(EEPROM_ADDRESS, nodeId); // Save the ID to EEPROM
         EEPROM.commit(); // Make sure the data is saved
     }
@@ -94,7 +95,7 @@ void setup() {
     }
     
     // Configure RF95
-    rf95.setFrequency(915.0);
+    rf95.setFrequency(920.0);
     rf95.setTxPower(23, false);
     dht.begin();
     Serial.println(F("RF95 ready with DHT11 test!"));
@@ -113,7 +114,7 @@ void loop() {
         }
 
         // Prepare message with temperature and humidity data and unique count
-        sprintf(buf, "ID:%d T:%.2f C H:%.2f %% Count: %.d", sentCounter++, t, h);
+        sprintf(buf, "ID:%d T:%.2f C H:%.2f %%", sentCounter++, t, h);
         Serial.print(F("Sending data to N4 via N2 and N3: "));
         Serial.println(buf);
         
@@ -171,11 +172,7 @@ void loop() {
                 if (!sendWithRetry(4, buf)) {
                     Serial.println(F("Failed to forward to N4 after retries"));
                 }
-            } else if (nodeId == 4) {
-                // If Node 4 receives data directly
-                Serial.print(F("Data received at N4: "));
-                Serial.println(buf);
-            }
+            } 
         } else {
             Serial.println(F("Duplicate message received, ignoring."));
         }
