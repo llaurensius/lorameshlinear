@@ -9,17 +9,31 @@
 #define DHTPIN 25     // Digital pin connected to the DHT sensor
 #define DHTTYPE DHT11 // DHT 11
 
-#define N_NODES 4     // Total number of nodes: N1, N2, N3, N4
+#define N_NODES 3     // Total number of nodes: N1, N2, N3, N4
 #define EEPROM_ADDRESS 0 // EEPROM address to store node ID
 #define MAX_RECEIVED_IDS 100 // Maximum number of IDs to store
 
-// Pin definitions for ESP32-WROOM32
+//PIN DEFINITIONS
+/*// Pin definitions for TTGO LoRa V1
+#define RFM95_CS 18    // Chip Select
+#define RFM95_RST 24   // Reset
+#define RFM95_INT 26   // DIO0
+//*/
+
+/// Pin definitions for ESP32-WROOM32
 #define RFM95_CS 5    // Chip Select
 #define RFM95_RST 14   // Reset
 #define RFM95_INT 2   // DIO0
+//*/
+
+/*// Pin definitions for ESP32-MisRed
+#define RFM95_CS 15    // Chip Select
+#define RFM95_RST 26   // Reset
+#define RFM95_INT 27   // DIO0
+//*/
 
 uint8_t nodeId;
-uint8_t setNodeId = 3; // Change this value for each node before uploading
+uint8_t setNodeId = 2; // Change this value for each node before uploading
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT); // RF95 driver with specified pins
 RHMesh *manager; // Mesh manager

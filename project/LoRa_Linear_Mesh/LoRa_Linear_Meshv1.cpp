@@ -4,7 +4,7 @@
 #include <RH_RF95.h>
 
 #define LED 13
-#define N_NODES 5 // Total number of nodes: N1, N2, N3, N4, N5
+#define N_NODES 3 // Total number of nodes: N1, N2, N3
 #define EEPROM_ADDRESS 0 // EEPROM address to store node ID
 
 /*// Pin definitions for TTGO LoRa V1
@@ -13,13 +13,13 @@
 #define RFM95_INT 26   // DIO0
 //*/
 
-/// Pin definitions for ESP32-MisRed
+/*// Pin definitions for ESP32-MisRed
 #define RFM95_CS 15    // Chip Select
 #define RFM95_RST 26   // Reset
 #define RFM95_INT 27   // DIO0
 //*/
 
-/*// Pin definitions for ESP32-WROOM32
+/// Pin definitions for ESP32-WROOM32
 #define RFM95_CS 5    // Chip Select
 #define RFM95_RST 14   // Reset
 #define RFM95_INT 2  // DIO0
@@ -46,7 +46,7 @@ void setup() {
         // Set nodeId based on the specific node initially programmed
         // You can manually change the ID here for testing purposes
         // This code snippet is for Node 1
-        nodeId = 1; // Change this value for each node before uploading
+        nodeId = 3; // Change this value for each node before uploading
         EEPROM.write(EEPROM_ADDRESS, nodeId); // Save the ID to EEPROM
         EEPROM.commit(); // Make sure the data is saved
     }
@@ -83,19 +83,6 @@ void loop() {
             Serial.println(F("Message sent to N2 successfully"));
         }
     }
-    if (nodeId == 5) {
-        sprintf(buf, "Hello From Node 5"); // Prepare message for N4
-        Serial.print(F("Sending to N4..."));
-        
-        // Send message to N4
-        uint8_t errorN4 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 4);
-        if (errorN4 != RH_ROUTER_ERROR_NONE) {
-            Serial.print(F("Error sending to N4: "));
-            Serial.println(errorN4);
-        } else {
-            Serial.println(F("Message sent to N4 successfully"));
-        }
-    }
 
     // Listen for incoming messages
     uint8_t len = sizeof(buf);
@@ -111,17 +98,6 @@ void loop() {
         if (nodeId == 2) {
             // Prepare message to send to N3
             sprintf(buf + len, " | Hello From Node 2"); // Append message from N2
-            uint8_t errorN3 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 3);
-            if (errorN3 != RH_ROUTER_ERROR_NONE) {
-                Serial.print(F("Error sending to N3: "));
-                Serial.println(errorN3);
-            } else {
-                Serial.println(F("Message forwarded to N3 successfully"));
-            }
-        }
-        if (nodeId == 4) {
-            // Prepare message to send to N3
-            sprintf(buf + len, " | Hello From Node 4"); // Append message from N4
             uint8_t errorN3 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 3);
             if (errorN3 != RH_ROUTER_ERROR_NONE) {
                 Serial.print(F("Error sending to N3: "));

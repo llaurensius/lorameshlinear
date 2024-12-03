@@ -27,6 +27,7 @@
 
 // Declare a variable for the node ID
 uint8_t nodeId; 
+uint8_t randomValue1, randomValue2, randomValue4, randomValue5;
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT); // RF95 driver with specified pins
 RHMesh *manager; // Mesh manager
@@ -69,9 +70,14 @@ void setup() {
 }
 
 void loop() {
+    randomValue1 = random(0, 100);
+    randomValue2 = random(100, 200);
+    randomValue4 = random(200, 300);
+    randomValue5 = random(300, 400);
     // If the current node is N1, send a message to N2
     if (nodeId == 1) {
-        sprintf(buf, "Hello From Node 1"); // Prepare message for N2
+        // sprintf(buf, "Hello From Node 1"); // Prepare message for N2
+        sprintf(buf, "Value N1: %d", randomValue1);
         Serial.print(F("Sending to N2..."));
         
         // Send message to N2
@@ -84,7 +90,8 @@ void loop() {
         }
     }
     if (nodeId == 5) {
-        sprintf(buf, "Hello From Node 5"); // Prepare message for N4
+        // sprintf(buf, "Hello From Node 5"); // Prepare message for N4
+        sprintf(buf, "Value N5: %d", randomValue5);
         Serial.print(F("Sending to N4..."));
         
         // Send message to N4
@@ -110,7 +117,8 @@ void loop() {
         // Forward the message to the next node if necessary
         if (nodeId == 2) {
             // Prepare message to send to N3
-            sprintf(buf + len, " | Hello From Node 2"); // Append message from N2
+            // sprintf(buf + len, " | Hello From Node 2"); // Append message from N2
+            sprintf(buf + len, " | Value N2: %d", randomValue2); // Append message from N2
             uint8_t errorN3 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 3);
             if (errorN3 != RH_ROUTER_ERROR_NONE) {
                 Serial.print(F("Error sending to N3: "));
@@ -121,7 +129,8 @@ void loop() {
         }
         if (nodeId == 4) {
             // Prepare message to send to N3
-            sprintf(buf + len, " | Hello From Node 4"); // Append message from N4
+            // sprintf(buf + len, " | Hello From Node 4"); // Append message from N4
+            sprintf(buf + len, " | Value N4: %d", randomValue4); // Append message from N2            
             uint8_t errorN3 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 3);
             if (errorN3 != RH_ROUTER_ERROR_NONE) {
                 Serial.print(F("Error sending to N3: "));
