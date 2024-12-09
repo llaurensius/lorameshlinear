@@ -8,13 +8,13 @@
 #define EEPROM_ADDRESS 0 // EEPROM address to store node ID
 #define CSMA_WAIT_TIME 100 // Maximum wait time before retrying (in milliseconds)
 
-/// Pin definitions for TTGO LoRa V1
+/*// Pin definitions for TTGO LoRa V1
 #define RFM95_CS 18    // Chip Select
 #define RFM95_RST 24   // Reset
 #define RFM95_INT 26   // DIO0
 //*/
 
-/*// Pin definitions for ESP32-MisRed
+/// Pin definitions for ESP32-MisRed
 #define RFM95_CS 15    // Chip Select
 #define RFM95_RST 26   // Reset
 #define RFM95_INT 27   // DIO0
@@ -28,6 +28,9 @@
 
 uint8_t nodeId; 
 uint8_t randomValue1, randomValue2, randomValue4 /*, randomValue5*/;
+uint8_t sentCounter1 = 0;
+uint8_t sentCounter2 = 0;
+uint8_t sentCounter4 = 0;
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT); // RF95 driver with specified pins
 RHMesh *manager; // Mesh manager
@@ -86,7 +89,7 @@ void loop() {
     // If the channel is not busy, send messages
     if (!channelBusy) {
         if (nodeId == 1) {
-            sprintf(buf, "Value N1: %d | timestamps: %lu", randomValue1, timestamps);
+            sprintf(buf, "ID: %d | Value N1: %d | timestamps: %lu", sentCounter1, randomValue1, timestamps);
             Serial.print(F("Sending to N2..."));
             uint8_t errorN2 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 2);
             if (errorN2 != RH_ROUTER_ERROR_NONE) {
@@ -94,10 +97,11 @@ void loop() {
                 Serial.println(errorN2);
             } else {
                 Serial.println(F("Message sent to N2 successfully"));
+                sentCounter1++; 
             }
         }
         if (nodeId == 4) {
-            sprintf(buf, "Value N4: %d | timestamps: %lu", randomValue4, timestamps);
+            sprintf(buf, "ID: %d | Value N4: %d | timestamps: %lu", sentCounter4, randomValue4, timestamps);
             Serial.print(F("Sending to N3..."));
             uint8_t errorN4 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 3);
             if (errorN4 != RH_ROUTER_ERROR_NONE) {
@@ -105,6 +109,7 @@ void loop() {
                 Serial.println(errorN4);
             } else {
                 Serial.println(F("Message sent to N3 successfully"));
+                sentCounter4++;
             }
         }
     } else {
@@ -123,13 +128,14 @@ void loop() {
         
         // Forward the message to the next node if necessary
         if (nodeId == 2) {
-            sprintf(buf + len, " | Value N2: %d | timestamps: %lu", randomValue2, timestamps);
+            sprintf(buf + len, " ID: %d | Value N2: %d | timestamps: %lu", sentCounter2, randomValue2, timestamps);
             uint8_t errorN3 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 3);
             if (errorN3 != RH_ROUTER_ERROR_NONE) {
                 Serial.print(F("Error sending to N3: "));
                 Serial.println(errorN3);
             } else {
                 Serial.println(F("Message forwarded to N3 successfully"));
+                sentCounter2++;
             }
         } /*
         if (nodeId == 4) {
