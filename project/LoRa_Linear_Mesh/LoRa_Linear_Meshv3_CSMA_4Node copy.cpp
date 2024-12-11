@@ -88,7 +88,8 @@ void loop() {
     if (!channelBusy) {
         if (nodeId == 1) {
             sprintf(buf, "ID: %d | Value N1: %d | timestamps: %lu", sentCounter1, randomValue1, timestamps);
-            Serial.print(F("Sending to N2..."));
+            Serial.print(F("Sending to N2: "));
+            Serial.println(buf);
             uint8_t errorN2 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 2);
             if (errorN2 != RH_ROUTER_ERROR_NONE) {
                 Serial.print(F("Error sending to N2: "));
@@ -100,7 +101,8 @@ void loop() {
         }
         if (nodeId == 4) {
             sprintf(buf, "ID: %d | Value N4: %d | timestamps: %lu", sentCounter4, randomValue4, timestamps);
-            Serial.print(F("Sending to N3..."));
+            Serial.print(F("Sending to N3: "));
+            Serial.println(buf);
             uint8_t errorN4 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 3);
             if (errorN4 != RH_ROUTER_ERROR_NONE) {
                 Serial.print(F("Error sending to N3: "));
@@ -137,6 +139,8 @@ void loop() {
         // Forward the message to the next node if necessary
         if (nodeId == 2) {
             sprintf(buf + len, " ID: %d | Value N2: %d | timestamps: %lu", sentCounter2, randomValue2, timestamps);
+            Serial.print(F("Forwarding to N3: "));
+            Serial.println(buf);
             uint8_t errorN3 = manager->sendtoWait((uint8_t *)buf, strlen(buf), 3);
             if (errorN3 != RH_ROUTER_ERROR_NONE) {
                 Serial.print(F("Error sending to N3: "));
@@ -148,5 +152,5 @@ void loop() {
         }
     }
 
-    delay(2000); // Delay before next transmission
+    delay(5000); // Delay before next transmission
 }
